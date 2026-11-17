@@ -4,7 +4,7 @@
 const CONFIG = {
   // URL de la Web App de Google Apps Script (termina en /exec).
   // VACÍO = modo prueba: todo funciona, pero sólo entre pestañas del MISMO navegador.
-  URL: "",
+  URL: "https://script.google.com/macros/s/AKfycbylHOc2BufZQ6jC8qDA8xEdQX547WyogoObva3gJPcDdQfJ3rcBxHNqVCZwwNEBDnkzAA/exec",
 
   // Dirección que codifica el QR (la página donde el público manda mensajes).
   // VACÍO = se arma sola: la misma carpeta donde está publicado qr.html + "index.html".
