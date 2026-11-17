@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>losMetritos · Hashtag</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:transparent; }
+  /* arriba a la izquierda, a la misma altura que la mosca */
+  #tag { position:absolute; left:98px; top:58px; font:900 38px/1 'Inter',Helvetica,Arial,sans-serif; letter-spacing:-.03em; color:var(--blanco);
+         text-shadow:0 2px 8px rgba(29,29,27,.55), 0 0 2px rgba(29,29,27,.6); display:flex; align-items:center; gap:10px; }
+  #tag b { color:var(--rojo); text-shadow:0 2px 8px rgba(29,29,27,.35); font-weight:900; }
+  body.fondo { background:#888 repeating-conic-gradient(#7a7a7a 0 25%, #959595 0 50%) 0 0/60px 60px; }
+</style>
+</head>
+<body>
+  <div id="tag"><span><b>#</b><span id="t"></span></span></div>
+<script src="config.js"></script>
+<script>
+  if (new URLSearchParams(location.search).has('fondo')) document.body.classList.add('fondo');
+  document.getElementById('t').textContent = CONFIG.HASHTAG.replace(/^#/, '');
+</script>
+</body>
+</html>

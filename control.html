@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de zócalos · losMetritos</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root { --fondo:#1D1D1B; --panel:#272725; --campo:#131312; --linea:#3E3E3A; --suave:#A9A9A3; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { background: var(--fondo); color: var(--blanco); font-family: "Inter", system-ui, sans-serif; display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+  header { position: relative; flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 92px; padding: 0 24px;
+           background: var(--rojo); border-bottom: 4px solid var(--negro); overflow: hidden; }
+  header .stars { position: absolute; inset: 0; pointer-events: none; }
+  header .stars i { position: absolute; background: var(--rojo-osc); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .brand { position: relative; display: flex; align-items: center; gap: 18px; min-width: 0; }
+  .wordmark { background: var(--blanco); color: var(--rojo); padding: 8px 34px 8px 16px; clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+              font: 300 34px/1 "Inter", sans-serif; letter-spacing: -.035em; white-space: nowrap; }
+  .wordmark b { font-weight: 900; }
+  h1 { font: 400 42px/1 "Bebas Neue", Impact, sans-serif; letter-spacing: .06em; margin: 0; white-space: nowrap; padding-top: 4px; }
+  #logo { height: 30px; width: auto; display: block; opacity: .95; }
+  .right { position: relative; display: flex; gap: 12px; align-items: center; }
+
+  main { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 1.6vh; padding: 1.6vh 20px; width: 100%; }
+
+  /* dos previsualizaciones lado a lado */
+  #views { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; gap: 16px; }
+  .view { width: calc(50% - 8px); flex: none; }
+  .tag { font-size: clamp(11px, 1.7vh, 13px); font-weight: 700; letter-spacing: .06em; color: var(--suave); margin: 0 0 5px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; }
+  .tag.vt { font: 400 clamp(24px, 3.6vh, 30px)/1.1 "Bebas Neue", Impact, sans-serif; letter-spacing: .06em; justify-content: center; text-align: center; white-space: nowrap; color: var(--blanco); }
+  .tag.vt .pill { padding: 2px 12px 0; border-radius: 4px; }
+  .view.air .vt .pill { background: var(--rojo); }
+  .view.draft .vt .pill { background: var(--blanco); color: var(--negro); }
+  .tag.vt small { font: 400 .62em "Inter", sans-serif; letter-spacing: 0; color: var(--suave); }
+  .pw { position: relative; width: 100%; aspect-ratio: 16/9; background: #ddd; border: 4px solid var(--blanco); border-radius: 6px; overflow: hidden; }
+  .pw iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; background: transparent; transform-origin: 0 0; }
+  .view.air .pw { border-color: var(--rojo); box-shadow: 0 0 0 1px var(--negro), 0 0 22px rgba(218,0,0,.35); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #777; flex: none; }
+  .dot.on { background: var(--blanco); box-shadow: 0 0 0 3px rgba(251,255,255,.3); animation: blink 1.4s ease-in-out infinite; }
+  .dot.err { background: #000; }
+  @keyframes blink { 50% { opacity: .35; } }
+
+  .card { flex: none; min-height: 0; background: var(--panel); border-radius: 10px; border-top: 4px solid var(--rojo); padding: 1.4vh 18px; display: flex; flex-direction: column; gap: 1.2vh; }
+  .fields { flex: none; display: grid; grid-template-columns: 1fr 1.7fr; gap: 14px; }
+  label { display: grid; grid-template-rows: auto 1fr; gap: 5px; font-size: clamp(11px, 1.7vh, 13px); font-weight: 700; letter-spacing: .05em; color: var(--blanco); min-width: 0; }
+  label small { color: var(--suave); font-weight: 400; letter-spacing: 0; }
+  textarea { resize: none; height: calc(2.2em + 1.6vh + 4px); min-height: 0; overflow-y: auto; scrollbar-width: thin; font: 400 clamp(20px, 3.6vh, 30px)/1.1 "Bebas Neue", Impact, sans-serif; letter-spacing: .04em; text-transform: uppercase; padding: .8vh 12px;
+             background: var(--campo); color: var(--blanco); border: 2px solid var(--linea); border-radius: 6px; width: 100%; }
+  textarea:focus { border-color: var(--rojo); outline: none; }
+  textarea::placeholder { color: #5d5d58; }
+  button:focus-visible { outline: 3px solid var(--blanco); outline-offset: 2px; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  button { font: 400 clamp(18px, 3.2vh, 26px) "Bebas Neue", Impact, sans-serif; letter-spacing: .06em; padding: .8vh 22px .5vh; border: 0; border-radius: 6px; cursor: pointer; color: var(--blanco); background: var(--linea); white-space: nowrap; transition: filter .15s, transform .08s; }
+  button:hover:not(:disabled) { filter: brightness(1.12); }
+  button:active:not(:disabled) { transform: scale(.98); }
+  button.send { background: var(--rojo); color: var(--blanco); flex: 1; }
+  button.hide { background: var(--blanco); color: var(--negro); min-width: 240px; }
+  button.show { background: var(--blanco); color: var(--rojo); min-width: 240px; }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  #fs { font-size: 18px; padding: 7px 14px 5px; background: var(--negro); }
+  .status { font-size: 13px; font-weight: 700; letter-spacing: .04em; display: flex; gap: 8px; align-items: center; background: var(--negro); padding: 8px 14px; border-radius: 6px; text-transform: uppercase; }
+  #hist { display: flex; gap: 8px; height: 72px; flex: none; overflow-y: auto; overflow-x: hidden; flex-wrap: wrap; align-content: flex-start; padding: 6px 8px 6px 6px; background: var(--campo); border: 1px solid var(--linea); border-radius: 6px; scrollbar-width: thin; scrollbar-color: #4a4a45 transparent; }
+  #hist:empty::before { content: "Todavía no enviaste nada."; color: #5d5d58; font-size: 13px; padding: 4px; }
+  #master { display: block; width: 100%; text-align: left; background: var(--campo); border: 2px solid var(--rojo); padding: .6vh 14px .4vh; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(16px, 2.8vh, 24px); }
+  #master small { font: 400 clamp(12px, 2vh, 17px) "Bebas Neue", Impact, sans-serif; color: var(--rojo); letter-spacing: .05em; filter: brightness(1.4); }
+  .hi { position: relative; display: flex; max-width: 32%; }
+  .hi > button:first-child { font: 13px "Inter", system-ui; letter-spacing: 0; height: 28px; padding: 0 26px 0 10px; background: #33332F; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .hi .x { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: none; width: 20px; height: 20px; padding: 0; border-radius: 50%; background: var(--rojo-osc); color: var(--blanco); font: 700 13px/20px system-ui; letter-spacing: 0; text-align: center; }
+  .hi:hover .x, .hi:focus-within .x { display: block; }
+  .hi .x:hover { background: var(--rojo); }
+
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.78); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  #modal.open { display: flex; }
+  #modal .dlg { background: var(--panel); border-top: 6px solid var(--rojo); border-radius: 10px; padding: 24px; max-width: 640px; width: 100%; display: grid; gap: 14px; }
+  #modal h2 { margin: 0; font: 400 34px "Bebas Neue", Impact, sans-serif; letter-spacing: .04em; }
+  #modal blockquote { max-height: 40vh; overflow: auto; margin: 0; padding: 14px; background: var(--rojo); border: 3px solid var(--negro); border-radius: 6px; font: 400 30px/1 "Bebas Neue", Impact, sans-serif; letter-spacing: .04em; }
+  #modal blockquote small { display: inline-block; font-size: 20px; background: var(--negro); padding: 4px 10px 2px; border-radius: 4px; margin-bottom: 8px; }
+  #modal p { color: var(--suave); }
+  #modal .row button { font-size: 24px; padding: 10px 20px 8px; }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 90px); background: var(--blanco); color: var(--negro); padding: 10px 22px; border-radius: 30px; font-weight: 700; transition: transform .35s; z-index: 11; border-left: 8px solid var(--rojo); }
+  #toast.show { transform: translate(-50%, 0); }
+  .mode { font-size: 12px; font-weight: 700; background: var(--blanco); color: var(--rojo); padding: 6px 10px; border-radius: 4px; letter-spacing: .04em; }
+  @media (max-width: 900px) { h1, #logo { display: none; } }
+  @media (max-width: 720px) { .fields { grid-template-columns: 1fr; } .row { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="stars" id="hstars"></div>
+  <div class="brand">
+    <div class="wordmark">los<b>Metritos</b></div>
+    <h1>CONTROL DE ZÓCALOS</h1>
+    <img id="logo" src="logolametro.png" alt="La Metro" onerror="this.style.display='none'">
+  </div>
+  <div class="right">
+    <span class="mode" id="mode" hidden>MODO PRUEBA (SIN APPS SCRIPT)</span>
+    <div class="status"><span class="dot" id="dot"></span><span id="state">Conectando…</span></div>
+    <button id="fs" title="Pantalla completa">PANTALLA COMPLETA</button>
+  </div>
+</header>
+
+<main>
+  <section id="views">
+    <div class="view air">
+      <p class="tag vt"><span class="pill">● AL AIRE AHORA</span></p>
+      <div class="pw"><iframe id="pvLive" src="graph.html?live=1"></iframe></div>
+    </div>
+    <div class="view draft">
+      <p class="tag vt"><span class="pill">BORRADOR</span> <small>(lo que estás escribiendo)</small></p>
+      <div class="pw"><iframe id="pv" src="graph.html?preview=1"></iframe></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="fields">
+      <label><span>TEXTO CHICO <small>(opcional · vacío = no aparece la pestaña)</small></span>
+        <textarea id="small" autocomplete="off" placeholder="EN VIVO DESDE LA METRO"></textarea></label>
+      <label><span>TEXTO GRANDE <small>(obligatorio)</small></span>
+        <textarea id="big" autocomplete="off" placeholder="BIENVENIDOS A LOSMETRITOS"></textarea></label>
+    </div>
+    <div class="row">
+      <button class="send" id="send" disabled>ENVIAR A PANTALLA</button>
+      <button class="hide" id="hide">OCULTAR ZÓCALO</button>
+    </div>
+    <div><p class="tag">Base fija (clic para cargar)</p>
+      <button id="master" type="button"></button></div>
+    <div><p class="tag">Últimos enviados (clic para recargar)</p><div id="hist"></div></div>
+  </section>
+</main>
+
+<div id="modal"><div class="dlg" role="dialog" aria-modal="true">
+  <h2>¿ENVIAR A PANTALLA?</h2>
+  <blockquote id="mq"></blockquote>
+  <p style="margin:0">Revisá la ortografía antes de enviar: lo que confirmes sale al aire.</p>
+  <div class="row"><button id="back">VOLVER A REVISAR</button><button class="send" id="ok">SÍ, ENVIAR</button></div>
+</div></div>
+<div id="toast"></div>
+
+<script src="config.js"></script>
+<script src="sync.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+var onAir = {};
+const small = $("small"), big = $("big"), pv = $("pv"), send = $("send");
+if (!CONFIG.URL) $("mode").hidden = false;
+
+// estrellitas del encabezado
+(function () {
+  const r = (a, b) => a + Math.random() * (b - a);
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement("i"), z = r(8, 20);
+    s.style.cssText = `width:${z}px;height:${z}px;left:${r(0, 100)}%;top:${r(5, 85)}%;transform:rotate(${r(-30, 30)}deg)`;
+    $("hstars").appendChild(s);
+  }
+})();
+
+// escalado de las previsualizaciones al tamaño de su caja
+function fitViews() {
+  const v = $("views"), t = v.querySelector(".vt");
+  const h = v.clientHeight - t.offsetHeight - 5 - 8;
+  const w = Math.max(160, Math.min(h * 16 / 9, (v.clientWidth - 16) / 2)) + 8;
+  v.querySelectorAll(".view").forEach(e => { e.style.width = w + "px"; });
+}
+function scale() {
+  fitViews();
+  document.querySelectorAll(".pw").forEach(w => { w.firstElementChild.style.transform = `scale(${w.clientWidth / 1920})`; });
+}
+addEventListener("resize", scale); scale();
+new ResizeObserver(scale).observe($("views"));
+
+// todo en mayúsculas, sin saltos de línea
+function upper(el) {
+  const p = el.selectionStart;
+  el.value = el.value.toUpperCase().replace(/[\r\n]+/g, " ");
+  el.setSelectionRange(p, p);
+}
+function draft() {
+  pv.contentWindow.postMessage({ type: "draft", small: small.value.trim(), big: big.value.trim() }, "*");
+  send.disabled = !big.value.trim();
+}
+[small, big].forEach(el => {
+  el.addEventListener("input", () => { upper(el); draft(); });
+  el.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); if ((e.ctrlKey || e.metaKey) && !send.disabled) send.click(); }
+  });
+});
+pv.addEventListener("load", () => { scale(); draft(); });
+
+// confirmación
+send.onclick = () => {
+  $("mq").innerHTML = (small.value.trim() ? `<small>${esc(small.value.trim())}</small><br>` : "") + esc(big.value.trim());
+  $("modal").classList.add("open"); $("ok").focus();
+};
+$("back").onclick = () => $("modal").classList.remove("open");
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("modal").classList.remove("open"); });
+$("ok").onclick = async () => {
+  $("modal").classList.remove("open");
+  const s = { visible: true, small: small.value.trim(), big: big.value.trim() };
+  await push(s, "ENVIADO A PANTALLA"); addHist(s);
+};
+// OCULTAR / MOSTRAR (muestra el último que estuvo al aire)
+const toggle = $("hide");
+function refreshToggle() {
+  toggle.textContent = onAir.visible ? "OCULTAR ZÓCALO" : "MOSTRAR ZÓCALO";
+  toggle.className = onAir.visible ? "hide" : "show";
+  toggle.disabled = !onAir.visible && !onAir.big;
+}
+toggle.onclick = () => {
+  const keep = { small: onAir.small || "", big: onAir.big || "" };
+  if (onAir.visible) push({ visible: false, ...keep }, "ZÓCALO OCULTO");
+  else push({ visible: true, ...keep }, "ZÓCALO MOSTRADO");
+};
+
+async function push(s, msg) {
+  try { await Sync.set(s); onAir = { id: s.id, visible: s.visible, small: s.small, big: s.big }; refreshToggle(); paintState(); toast(msg); }
+  catch (e) { console.error("Sync.set falló:", e); toast("ERROR AL ENVIAR: " + String((e && e.message) || e).slice(0, 70)); }
+}
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 2200); }
+function esc(t) { return t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+// base fija + historial local
+const BASE = { small: CONFIG.BASE_CHICO, big: CONFIG.BASE_GRANDE };
+$("master").innerHTML = `<small>${esc(BASE.small)} –</small> ${esc(BASE.big)}`;
+$("master").onclick = () => { small.value = BASE.small; big.value = BASE.big; draft(); };
+const isBase = x => x.small === BASE.small && x.big === BASE.big;
+const getH = () => { try { return JSON.parse(localStorage.getItem("lm_hist") || "[]").filter(x => !isBase(x)); } catch (e) { return []; } };
+function addHist(s) {
+  if (isBase(s)) return;
+  let h = getH().filter(x => x.big !== s.big || x.small !== s.small);
+  h.unshift({ small: s.small, big: s.big }); localStorage.setItem("lm_hist", JSON.stringify(h.slice(0, 40))); drawHist();
+}
+function drawHist() {
+  const h = getH(); $("hist").innerHTML = "";
+  h.forEach((x, i) => {
+    const w = document.createElement("div"); w.className = "hi";
+    const b = document.createElement("button"); b.textContent = (x.small ? x.small + " · " : "") + x.big; b.title = b.textContent;
+    b.onclick = () => { small.value = x.small; big.value = x.big; draft(); };
+    const d = document.createElement("button"); d.className = "x"; d.textContent = "×"; d.title = "Borrar";
+    d.onclick = e => { e.stopPropagation(); const l = getH(); l.splice(i, 1); localStorage.setItem("lm_hist", JSON.stringify(l)); drawHist(); };
+    w.append(b, d); $("hist").append(w);
+  });
+}
+drawHist();
+
+// estado actual en pantalla
+function paintState() {
+  $("dot").className = "dot " + (onAir.visible ? "on" : "");
+  $("state").textContent = onAir.visible ? "Al aire" : "Zócalo oculto";
+}
+async function poll() {
+  try { onAir = await Sync.get(); paintState(); refreshToggle(); }
+  catch (e) { $("dot").className = "dot err"; $("state").textContent = "Sin conexión"; }
+  setTimeout(poll, 2000);
+}
+poll();
+
+// pantalla completa
+$("fs").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+document.addEventListener("fullscreenchange", () => { $("fs").textContent = document.fullscreenElement ? "SALIR" : "PANTALLA COMPLETA"; setTimeout(scale, 150); });
+</script>
+</body>
+</html>

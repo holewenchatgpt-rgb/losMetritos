@@ -1,0 +1,14 @@
+/* Tipografías del programa (todas libres, incluidas en la carpeta fonts/) */
+@font-face { font-family: "Bebas Neue"; src: url("fonts/bebas-neue-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Inter"; src: url("fonts/inter-latin-300-normal.woff2") format("woff2"); font-weight: 300; font-display: block; }
+@font-face { font-family: "Inter"; src: url("fonts/inter-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Inter"; src: url("fonts/inter-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: block; }
+@font-face { font-family: "Inter"; src: url("fonts/inter-latin-900-normal.woff2") format("woff2"); font-weight: 900; font-display: block; }
+
+/* Colores de La Metro */
+:root {
+  --rojo: #DA0000;
+  --rojo-osc: #A00000;   /* estrellitas */
+  --blanco: #FBFFFF;
+  --negro: #1D1D1B;
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>losMetritos · Mensajes del público</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:transparent; }
+
+  /* barra de mensajes: 40px sobre el borde inferior, justo debajo del zócalo (que termina a 90px),
+     desde 200px a la izquierda hasta 340px de la derecha (ahí va el QR) */
+  #ticker-bar {
+    position:fixed; bottom:40px; left:200px; right:340px; height:50px;
+    background:var(--negro); z-index:20; border-top:4px solid var(--rojo);
+    border-radius:0 0 6px 6px; overflow:hidden;
+  }
+  #ticker-canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+
+  /* solapa "TU MENSAJE": mismo ancho que el sello blanco del zócalo, con el mismo corte diagonal */
+  #ticker-label {
+    position:fixed; bottom:40px; left:200px; height:50px; width:232px;
+    background:var(--rojo); color:var(--blanco);
+    font-family:'Inter',Helvetica,Arial,sans-serif; font-weight:900;
+    font-size:25px; letter-spacing:-.01em; text-transform:uppercase;
+    padding:0 30px 0 26px; display:flex; align-items:center; white-space:nowrap;
+    clip-path:polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
+    border-radius:0 0 0 6px; z-index:30; line-height:1;
+  }
+  .flash-new {
+    position:fixed; bottom:86px; left:200px; right:340px; height:4px;
+    background:linear-gradient(90deg,var(--rojo),var(--blanco),var(--rojo));
+    z-index:40; animation:flashBar 1s ease forwards; pointer-events:none;
+  }
+  @keyframes flashBar {
+    0%  { opacity:1; transform:scaleX(0); transform-origin:left; }
+    40% { opacity:1; transform:scaleX(1); }
+    100%{ opacity:0; transform:scaleX(1); }
+  }
+  /* para probar sin OBS: ?fondo=1 */
+  body.fondo { background:#888 repeating-conic-gradient(#7a7a7a 0 25%, #959595 0 50%) 0 0/60px 60px; }
+</style>
+</head>
+<body>
+<div id="ticker-label">Tu mensaje</div>
+<div id="ticker-bar"><canvas id="ticker-canvas"></canvas></div>
+
+<script src="config.js"></script>
+<script src="sync.js"></script>
+<script>
+if (new URLSearchParams(location.search).has('fondo')) document.body.classList.add('fondo');
+
+const canvas = document.getElementById('ticker-canvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+  canvas.width  = canvas.offsetWidth  * devicePixelRatio;
+  canvas.height = canvas.offsetHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const COLOR_TEXT = '#FBFFFF';
+const COLOR_SEP  = '#DA0000';
+const SPEED     = 110;                     // píxeles por segundo
+const SEP_PAD   = 30;                      // espacio a cada lado de la estrellita
+const NAME_FONT = `900 25px Inter, Helvetica, Arial, sans-serif`;
+const BODY_FONT = `300 25px Inter, Helvetica, Arial, sans-serif`;
+let LABEL_W = 250, CENTER_Y = 23, CAP_MID = 9, STAR_D = 18, SLOT_GAP = SEP_PAD * 2 + STAR_D;
+
+function computeMetrics() {
+  CENTER_Y = canvas.offsetHeight / 2;
+  LABEL_W = document.getElementById('ticker-label').offsetWidth + 24;
+  if (slots.length === 0) tailX = LABEL_W;
+  ctx.font = NAME_FONT;
+  const m = ctx.measureText('O');
+  CAP_MID = (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+  STAR_D = (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) * 0.95;
+  SLOT_GAP = SEP_PAD * 2 + STAR_D;
+}
+const BASELINE_Y = () => CENTER_Y + CAP_MID;
+
+let catalogue = [], slots = [], tailX = LABEL_W, catIdx = 0;
+const measure = (f, t) => { ctx.font = f; return ctx.measureText(t).width; };
+
+function createSlot(ci_) {
+  const m = catalogue[ci_ % catalogue.length];
+  const nameText = m.nombre.toUpperCase(), bodyText = m.texto.toUpperCase();
+  const nameW = measure(NAME_FONT, nameText), bodyW = measure(BODY_FONT, bodyText);
+  return { x: tailX, width: nameW + 14 + bodyW + SLOT_GAP, catKey: m.key, nameText, bodyText, nameW, bodyW, removing: m.removing || false };
+}
+function star(cx, cy, r) {                 // estrellita de 4 puntas (igual a las del zócalo)
+  const k = r * 0.24;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r); ctx.lineTo(cx + k, cy - k); ctx.lineTo(cx + r, cy); ctx.lineTo(cx + k, cy + k);
+  ctx.lineTo(cx, cy + r); ctx.lineTo(cx - k, cy + k); ctx.lineTo(cx - r, cy); ctx.lineTo(cx - k, cy - k);
+  ctx.closePath(); ctx.fill();
+}
+function drawFrame() {
+  ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+  ctx.textBaseline = 'alphabetic';
+  const by = BASELINE_Y();
+  ctx.save(); ctx.beginPath(); ctx.rect(LABEL_W - 24, 0, canvas.offsetWidth, canvas.offsetHeight); ctx.clip();   // nada se ve debajo de la solapa
+  for (const s of slots) {
+    let cx = s.x;
+    ctx.fillStyle = COLOR_TEXT;
+    ctx.font = NAME_FONT; ctx.fillText(s.nameText, cx, by); cx += s.nameW + 14;
+    ctx.font = BODY_FONT; ctx.fillText(s.bodyText, cx, by); cx += s.bodyW;
+    ctx.fillStyle = COLOR_SEP; star(cx + SEP_PAD + STAR_D / 2, CENTER_Y, STAR_D / 2);
+  }
+  ctx.restore();
+}
+
+let lastTs = null, running = false;
+function fillTail() {
+  const limit = canvas.offsetWidth * 1.2;
+  while (tailX < limit) {
+    let tries = 0;
+    while (tries < catalogue.length && catalogue[catIdx % catalogue.length]?.removing) { catIdx++; tries++; }
+    if (tries >= catalogue.length || catalogue.length === 0) break;
+    const slot = createSlot(catIdx); catIdx++;
+    slots.push(slot); tailX = slot.x + slot.width;
+  }
+}
+function tick(ts) {
+  if (lastTs === null) lastTs = ts;
+  const dt = Math.min(ts - lastTs, 50); lastTs = ts;
+  const delta = (dt / 1000) * SPEED;
+  for (const s of slots) s.x -= delta;
+  slots = slots.filter(s => {
+    if (s.x + s.width < 0) {
+      if (s.removing) {
+        const ci = catalogue.findIndex(m => m.key === s.catKey);
+        if (ci !== -1) catalogue.splice(ci, 1);
+        catIdx = catIdx % Math.max(catalogue.length, 1);
+      }
+      return false;
+    }
+    return true;
+  });
+  tailX = slots.length ? slots[slots.length - 1].x + slots[slots.length - 1].width : LABEL_W;
+  if (catalogue.some(m => !m.removing)) fillTail();
+  drawFrame();
+  requestAnimationFrame(tick);
+}
+async function start() {
+  if (running) return; running = true;
+  await Promise.all([document.fonts.load(NAME_FONT, 'O'), document.fonts.load(BODY_FONT, 'O')]).catch(() => {});
+  await document.fonts.ready;
+  computeMetrics();
+  await new Promise(r => requestAnimationFrame(r));
+  if (catalogue.some(m => !m.removing)) fillTail();
+  lastTs = null; requestAnimationFrame(tick);
+}
+async function addMessage(m) { catalogue.push({ ...m, removing: false }); if (!running) await start(); }
+function removeMessage(key) {
+  const e = catalogue.find(m => m.key === key); if (!e) return;
+  e.removing = true;
+  for (const s of slots) if (s.catKey === key) s.removing = true;
+}
+function flashBar() {
+  const el = document.createElement('div'); el.className = 'flash-new'; document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+// ── mensajes aprobados por el moderador ──
+const known = new Set();
+let firstLoad = true;
+async function poll() {
+  try {
+    const data = await API.get('aprobados');
+    if (!data.ok) return;
+    const ids = new Set(data.items.map(i => i.id));
+    for (const it of data.items) {
+      if (!known.has(it.id)) {
+        known.add(it.id);
+        addMessage({ key: it.id, nombre: it.nombre + ':', texto: it.texto });
+        if (!firstLoad) flashBar();
+      }
+    }
+    for (const id of [...known]) if (!ids.has(id)) { known.delete(id); removeMessage(id); }
+    firstLoad = false;
+  } catch (e) { /* sin conexión: reintenta en el próximo ciclo */ }
+}
+poll();
+setInterval(poll, CONFIG.MSG_POLL_MS);
+</script>
+</body>
+</html>

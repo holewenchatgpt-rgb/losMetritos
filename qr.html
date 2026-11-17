@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>losMetritos · QR mensajes</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:transparent; }
+
+  /* esquina inferior derecha: 40px del borde derecho y 40px del borde inferior (alineado con la barra de mensajes) */
+  #card {
+    position:fixed; right:40px; bottom:40px; width:270px; height:340px;
+    background:var(--rojo); border:4px solid var(--negro); border-radius:6px 6px 16px 16px;
+    display:flex; flex-direction:column; align-items:center; padding:16px 18px 18px; overflow:hidden;
+    font-family:'Inter',Helvetica,Arial,sans-serif; color:var(--blanco);
+    animation:entra .9s cubic-bezier(.22,.9,.24,1) both;
+  }
+  @keyframes entra { from { transform:translateY(60px); opacity:0; } to { transform:none; opacity:1; } }
+
+  .txt { position:relative; z-index:1; text-align:center; line-height:1; letter-spacing:-.03em; }
+  .txt .a { display:block; font-weight:300; font-size:25px; }
+  .txt .b { display:block; font-weight:900; font-size:35px; margin-top:2px; }
+
+  #qrbox { position:relative; z-index:1; margin-top:12px; width:214px; height:214px; background:var(--blanco); border-radius:14px; padding:12px;
+           box-shadow:0 0 0 4px var(--negro); }
+  #qrbox canvas, #qrbox img { width:100%; height:100%; display:block; image-rendering:pixelated; }
+
+  /* brillo que pasa cada tanto para llamar la atención */
+  #qrbox { overflow:hidden; }
+  #qrbox::after { content:""; position:absolute; top:0; bottom:0; width:55%; left:-70%; pointer-events:none;
+                  background:linear-gradient(105deg, transparent, rgba(218,0,0,.28), transparent);
+                  animation:brillo 9s ease-in-out 2s infinite; }
+  @keyframes brillo { 0%, 82% { left:-70%; } 100% { left:120%; } }
+
+  /* estrellitas */
+  #stars { position:absolute; inset:0; pointer-events:none; }
+  .st { position:absolute; background:var(--rojo-osc); opacity:0; animation:twinkle ease-in-out infinite;
+        clip-path:polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .st.dot { border-radius:50%; clip-path:none; }
+  @keyframes twinkle { 0%,100% { opacity:0; transform:scale(.4); } 50% { opacity:var(--o); transform:scale(1) rotate(var(--r)); } }
+
+  #err { display:none; position:relative; z-index:1; margin-top:12px; font-size:13px; text-align:center; background:var(--negro); padding:8px; border-radius:6px; }
+  body.fondo { background:#888 repeating-conic-gradient(#7a7a7a 0 25%, #959595 0 50%) 0 0/60px 60px; }
+</style>
+</head>
+<body>
+<div id="card">
+  <div id="stars"></div>
+  <div class="txt"><span class="a">Escaneá y mandá</span><span class="b">tu mensaje</span></div>
+  <div id="qrbox"></div>
+  <div id="err">Falta la dirección del formulario (FORM_URL en config.js)</div>
+</div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script>
+const QS = new URLSearchParams(location.search);
+if (QS.has('fondo')) document.body.classList.add('fondo');
+
+// dirección del formulario: config.js → ?url= → misma carpeta + index.html
+const url = CONFIG.FORM_URL || QS.get('url') || new URL('index.html', location.href).href;
+
+if (/^https?:/.test(url)) {
+  const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+  const n = qr.getModuleCount(), px = 8, c = document.createElement('canvas');
+  c.width = c.height = n * px;
+  const g = c.getContext('2d');
+  g.fillStyle = '#FBFFFF'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#1D1D1B';
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) g.fillRect(k * px, r * px, px, px);
+  document.getElementById('qrbox').appendChild(c);
+  document.title += ' → ' + url;
+} else {
+  // abierto desde la compu (file://): no hay dirección pública para el QR
+  document.getElementById('err').style.display = 'block';
+  document.getElementById('qrbox').style.display = 'none';
+}
+
+(function () {
+  const r = (a, b) => a + Math.random() * (b - a), box = document.getElementById('stars');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('i'), sp = i % 2 === 0, z = sp ? r(10, 18) : r(3, 5);
+    s.className = 'st' + (sp ? '' : ' dot');
+    s.style.cssText = `width:${z}px;height:${z}px;left:${r(2, 94)}%;top:${r(2, 96)}%;animation-duration:${r(4, 8)}s;animation-delay:-${r(0, 8)}s`;
+    s.style.setProperty('--o', r(.6, 1).toFixed(2)); s.style.setProperty('--r', r(-40, 40).toFixed(0) + 'deg');
+    box.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>
